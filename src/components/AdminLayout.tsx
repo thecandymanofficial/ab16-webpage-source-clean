@@ -1,15 +1,17 @@
 import { NavLink, Link, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Package, ShoppingBag, Music, Video, Newspaper, Calendar, Settings, LogOut, Menu, Users, Tag, Mail, FileText, Shield, BrainCircuit } from 'lucide-react';
+import { LayoutDashboard, Package, ShoppingBag, Music, Video, Newspaper, Calendar, Settings, LogOut, Menu, Users, Tag, Mail, FileText, Shield, BrainCircuit, Truck, Zap, BarChart3, Bell } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 
 const NAV = [
   { label: 'Overview', to: '/admin', icon: LayoutDashboard, end: true },
+  { label: 'Orders', to: '/admin/orders', icon: ShoppingBag },
   { label: 'Products', to: '/admin/products', icon: Package },
   { label: 'Inventory', to: '/admin/inventory', icon: Package },
-  { label: 'Orders', to: '/admin/orders', icon: ShoppingBag },
-  { label: 'Customers', to: '/admin/customers', icon: Users },
-  { label: 'Discounts', to: '/admin/discounts', icon: Tag },
+  { label: 'Analytics', to: '/admin/analytics', icon: BarChart3 },
+  { label: 'Alerts', to: '/admin/alerts', icon: Bell },
+  { label: 'Printful', to: '/admin/printful', icon: Truck },
+  { label: 'Stripe', to: '/admin/stripe', icon: Zap },
   { label: 'Releases', to: '/admin/releases', icon: Music },
   { label: 'AI Mastering', to: '/admin/ai-mastering', icon: BrainCircuit },
   { label: 'Videos', to: '/admin/videos', icon: Video },

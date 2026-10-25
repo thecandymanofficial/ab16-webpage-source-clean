@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Search, Pencil, Trash2, Package } from 'lucide-react';
+import { Plus, Pencil, Trash2, Package } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { formatPrice } from '@/lib/format';
+import { PageHeader, SearchInput, Badge, EmptyState, LoadingRows } from '@/components/admin/ui';
 import type { Product } from '@/types';
 
 export function AdminProducts() {
@@ -37,19 +38,21 @@ export function AdminProducts() {
     }
   };
 
+  const toggleAvailability = async (id: string, current: boolean) => {
+    const { error } = await supabase.from('products').update({ available_for_sale: !current }).eq('id', id);
+    if (error) {
+      setDeleteError(`Failed to update availability: ${error.message}`);
+    } else {
+      setProducts(products.map((p) => p.id === id ? { ...p, available_for_sale: !current } : p));
+    }
+  };
+
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold">Products</h1>
-          <p className="text-sm text-slate-500 mt-1">{products.length} total</p>
-        </div>
-        <Link to="/admin/products/new" className="btn-primary"><Plus size={16} /> New Product</Link>
-      </div>
+      <PageHeader title="Products" subtitle={`${products.length} total`} action={<Link to="/admin/products/new" className="btn-primary"><Plus size={16} /> New Product</Link>} />
 
-      <div className="relative mb-4">
-        <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-        <input placeholder="Search products…" value={search} onChange={(e) => setSearch(e.target.value)} className="w-full border border-slate-200 pl-11 pr-4 py-2.5 text-sm bg-white focus:outline-none focus:border-jet" />
+      <div className="mb-4">
+        <SearchInput value={search} onChange={setSearch} placeholder="Search products..." />
       </div>
 
       {deleteError && (
@@ -60,15 +63,11 @@ export function AdminProducts() {
       )}
 
       {loading ? (
-        <div className="space-y-2">{[0,1,2].map((i) => <div key={i} className="h-16 bg-white animate-pulse rounded" />)}</div>
+        <LoadingRows count={4} />
       ) : filtered.length === 0 ? (
-        <div className="bg-white border border-slate-200 rounded py-16 text-center">
-          <Package size={32} className="mx-auto text-slate-300 mb-3" />
-          <p className="text-slate-500">No products yet.</p>
-          <Link to="/admin/products/new" className="btn-primary mt-4">Create your first product</Link>
-        </div>
+        <EmptyState icon={Package} title="No products found" action={<Link to="/admin/products/new" className="btn-primary">Create your first product</Link>} />
       ) : (
-        <div className="bg-white border border-slate-200 rounded overflow-hidden">
+        <div className="bg-white border border-slate-200 rounded-lg overflow-hidden overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-slate-50 border-b border-slate-200">
               <tr>
@@ -76,6 +75,7 @@ export function AdminProducts() {
                 <th className="text-right px-4 py-3 font-semibold text-xs uppercase tracking-wider text-slate-500">Price</th>
                 <th className="text-center px-4 py-3 font-semibold text-xs uppercase tracking-wider text-slate-500">Stock</th>
                 <th className="text-center px-4 py-3 font-semibold text-xs uppercase tracking-wider text-slate-500">Status</th>
+                <th className="text-center px-4 py-3 font-semibold text-xs uppercase tracking-wider text-slate-500">For Sale</th>
                 <th className="text-right px-4 py-3 font-semibold text-xs uppercase tracking-wider text-slate-500">Actions</th>
               </tr>
             </thead>
@@ -83,12 +83,19 @@ export function AdminProducts() {
               {filtered.map((p) => {
                 const stock = p.product_variants?.reduce((s, v) => s + v.stock, 0) ?? 0;
                 return (
-                  <tr key={p.id} className="border-b border-slate-100 hover:bg-slate-50">
-                    <td className="px-4 py-3 font-medium">{p.name}</td>
+                  <tr key={p.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                    <td className="px-4 py-3 font-medium text-jet">{p.name}</td>
                     <td className="px-4 py-3 text-right">{formatPrice(p.price)}</td>
                     <td className="px-4 py-3 text-center">{stock}</td>
+                    <td className="px-4 py-3 text-center"><Badge tone={p.status === 'published' ? 'success' : 'neutral'}>{p.status}</Badge></td>
                     <td className="px-4 py-3 text-center">
-                      <span className={`badge ${p.status === 'published' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>{p.status}</span>
+                      <button
+                        onClick={() => toggleAvailability(p.id, p.available_for_sale)}
+                        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${p.available_for_sale ? 'bg-green-500' : 'bg-slate-300'}`}
+                        title={p.available_for_sale ? 'Available — click to disable' : 'Unavailable — click to enable'}
+                      >
+                        <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${p.available_for_sale ? 'translate-x-4.5' : 'translate-x-0.5'}`} />
+                      </button>
                     </td>
                     <td className="px-4 py-3 text-right">
                       <Link to={`/admin/products/${p.id}`} className="inline-flex p-1.5 hover:bg-slate-200 rounded" title="Edit"><Pencil size={14} /></Link>

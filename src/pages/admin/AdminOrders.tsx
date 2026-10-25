@@ -1,56 +1,82 @@
 import { useEffect, useState } from 'react';
-import { Search, ShoppingBag } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { ShoppingBag } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { formatPrice, formatDate } from '@/lib/format';
-import type { Order } from '@/types';
+import { PageHeader, SearchInput, FilterSelect, Badge, EmptyState, LoadingRows } from '@/components/admin/ui';
+
+interface OrderRow {
+  id: string;
+  order_number: string;
+  email: string;
+  total: number;
+  payment_status: string;
+  fulfilment_status: string | null;
+  created_at: string;
+  printful_orders: { status: string } | null;
+}
 
 export function AdminOrders() {
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [orders, setOrders] = useState<OrderRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [paymentFilter, setPaymentFilter] = useState('all');
+  const [fulfilmentFilter, setFulfilmentFilter] = useState('all');
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
-      setOrders(data as unknown as Order[] ?? []);
+      const { data } = await supabase
+        .from('orders')
+        .select('id, order_number, email, total, payment_status, fulfilment_status, created_at, printful_orders(status)')
+        .order('created_at', { ascending: false });
+      setOrders((data ?? []) as OrderRow[]);
       setLoading(false);
     })();
   }, []);
 
   const filtered = orders.filter((o) => {
     const matchesSearch = o.order_number?.toLowerCase().includes(search.toLowerCase()) || o.email?.toLowerCase().includes(search.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || o.payment_status === statusFilter;
-    return matchesSearch && matchesStatus;
+    const matchesPayment = paymentFilter === 'all' || o.payment_status === paymentFilter;
+    const matchesFulfilment = fulfilmentFilter === 'all' || o.fulfilment_status === fulfilmentFilter;
+    return matchesSearch && matchesPayment && matchesFulfilment;
   });
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-6">Orders</h1>
+      <PageHeader title="Orders" subtitle={`${orders.length} total`} />
 
-      <div className="flex gap-3 mb-4">
-        <div className="relative flex-1">
-          <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input placeholder="Search by order number or email…" value={search} onChange={(e) => setSearch(e.target.value)} className="w-full border border-slate-200 pl-11 pr-4 py-2.5 text-sm bg-white focus:outline-none focus:border-jet" />
-        </div>
-        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="border border-slate-200 px-4 py-2.5 text-sm bg-white cursor-pointer focus:outline-none focus:border-jet">
-          <option value="all">All Statuses</option>
-          <option value="pending">Pending</option>
-          <option value="paid">Paid</option>
-          <option value="refunded">Refunded</option>
-          <option value="failed">Failed</option>
-        </select>
+      <div className="flex flex-col sm:flex-row gap-3 mb-4">
+        <SearchInput value={search} onChange={setSearch} placeholder="Search by order number or email..." />
+        <FilterSelect
+          value={paymentFilter}
+          onChange={setPaymentFilter}
+          options={[
+            { value: 'all', label: 'All Payments' },
+            { value: 'pending', label: 'Pending' },
+            { value: 'paid', label: 'Paid' },
+            { value: 'refunded', label: 'Refunded' },
+            { value: 'failed', label: 'Failed' },
+          ]}
+        />
+        <FilterSelect
+          value={fulfilmentFilter}
+          onChange={setFulfilmentFilter}
+          options={[
+            { value: 'all', label: 'All Fulfilment' },
+            { value: 'unfulfilled', label: 'Unfulfilled' },
+            { value: 'fulfilled', label: 'Fulfilled' },
+            { value: 'shipped', label: 'Shipped' },
+            { value: 'cancelled', label: 'Cancelled' },
+          ]}
+        />
       </div>
 
       {loading ? (
-        <div className="space-y-2">{[0,1,2].map((i) => <div key={i} className="h-16 bg-white animate-pulse rounded" />)}</div>
+        <LoadingRows count={4} />
       ) : filtered.length === 0 ? (
-        <div className="bg-white border border-slate-200 rounded py-16 text-center">
-          <ShoppingBag size={32} className="mx-auto text-slate-300 mb-3" />
-          <p className="text-slate-500">No orders yet.</p>
-        </div>
+        <EmptyState icon={ShoppingBag} title="No orders found" desc="Orders will appear here once customers complete checkout." />
       ) : (
-        <div className="bg-white border border-slate-200 rounded overflow-hidden">
+        <div className="bg-white border border-slate-200 rounded-lg overflow-hidden overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-slate-50 border-b border-slate-200">
               <tr>
@@ -60,17 +86,19 @@ export function AdminOrders() {
                 <th className="text-right px-4 py-3 font-semibold text-xs uppercase tracking-wider text-slate-500">Total</th>
                 <th className="text-center px-4 py-3 font-semibold text-xs uppercase tracking-wider text-slate-500">Payment</th>
                 <th className="text-center px-4 py-3 font-semibold text-xs uppercase tracking-wider text-slate-500">Fulfilment</th>
+                <th className="text-center px-4 py-3 font-semibold text-xs uppercase tracking-wider text-slate-500">Printful</th>
               </tr>
             </thead>
             <tbody>
               {filtered.map((o) => (
-                <tr key={o.id} className="border-b border-slate-100 hover:bg-slate-50">
-                  <td className="px-4 py-3 font-mono text-xs font-medium">{o.order_number}</td>
-                  <td className="px-4 py-3">{o.email}</td>
+                <tr key={o.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                  <td className="px-4 py-3"><Link to={`/admin/orders/${o.id}`} className="font-mono text-xs font-medium text-accent hover:underline">{o.order_number}</Link></td>
+                  <td className="px-4 py-3 text-slate-600">{o.email}</td>
                   <td className="px-4 py-3 text-slate-500">{formatDate(o.created_at)}</td>
                   <td className="px-4 py-3 text-right font-semibold">{formatPrice(o.total)}</td>
-                  <td className="px-4 py-3 text-center"><span className={`badge ${o.payment_status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>{o.payment_status}</span></td>
-                  <td className="px-4 py-3 text-center"><span className="badge bg-slate-100 text-slate-600">{o.fulfilment_status}</span></td>
+                  <td className="px-4 py-3 text-center"><Badge tone={o.payment_status === 'paid' ? 'success' : o.payment_status === 'failed' ? 'danger' : 'warning'}>{o.payment_status}</Badge></td>
+                  <td className="px-4 py-3 text-center"><Badge tone={o.fulfilment_status === 'shipped' ? 'success' : o.fulfilment_status === 'cancelled' ? 'danger' : 'neutral'}>{o.fulfilment_status ?? '—'}</Badge></td>
+                  <td className="px-4 py-3 text-center">{o.printful_orders ? <Badge tone={o.printful_orders.status === 'shipped' ? 'success' : o.printful_orders.status === 'failed' ? 'danger' : 'info'}>{o.printful_orders.status}</Badge> : <span className="text-slate-300 text-xs">—</span>}</td>
                 </tr>
               ))}
             </tbody>

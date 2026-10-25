@@ -34,7 +34,12 @@ const AdminReleases = lazy(() => import('@/pages/admin/AdminReleases').then(m =>
 const AdminAIMastering = lazy(() => import('@/pages/admin/AdminAIMastering').then(m => ({ default: m.AdminAIMastering })));
 const AdminReleaseEdit = lazy(() => import('@/pages/admin/AdminReleaseEdit').then(m => ({ default: m.AdminReleaseEdit })));
 const AdminOrders = lazy(() => import('@/pages/admin/AdminOrders').then(m => ({ default: m.AdminOrders })));
+const AdminOrderDetail = lazy(() => import('@/pages/admin/AdminOrderDetail').then(m => ({ default: m.AdminOrderDetail })));
 const AdminInventory = lazy(() => import('@/pages/admin/AdminInventory').then(m => ({ default: m.AdminInventory })));
+const AdminPrintful = lazy(() => import('@/pages/admin/AdminPrintful').then(m => ({ default: m.AdminPrintful })));
+const AdminStripe = lazy(() => import('@/pages/admin/AdminStripe').then(m => ({ default: m.AdminStripe })));
+const AdminAnalytics = lazy(() => import('@/pages/admin/AdminAnalytics').then(m => ({ default: m.AdminAnalytics })));
+const AdminAlerts = lazy(() => import('@/pages/admin/AdminAlerts').then(m => ({ default: m.AdminAlerts })));
 const AdminNewsletter = lazy(() => import('@/pages/admin/AdminNewsletter').then(m => ({ default: m.AdminNewsletter })));
 const AdminEnquiries = lazy(() => import('@/pages/admin/AdminEnquiries').then(m => ({ default: m.AdminEnquiries })));
 const AdminSettings = lazy(() => import('@/pages/admin/AdminSettings').then(m => ({ default: m.AdminSettings })));
@@ -70,7 +75,12 @@ function App() {
         <Route path="/admin/products/:id" element={<AdminSuspense><AdminProductEdit /></AdminSuspense>} />
         <Route path="/admin/inventory" element={<AdminSuspense><AdminInventory /></AdminSuspense>} />
         <Route path="/admin/orders" element={<AdminSuspense><AdminOrders /></AdminSuspense>} />
-        <Route path="/admin/orders/:id" element={<AdminSuspense><AdminOrders /></AdminSuspense>} />
+        <Route path="/admin/orders/:id" element={<AdminSuspense><AdminOrderDetail /></AdminSuspense>} />
+        <Route path="/admin/inventory" element={<AdminSuspense><AdminInventory /></AdminSuspense>} />
+        <Route path="/admin/analytics" element={<AdminSuspense><AdminAnalytics /></AdminSuspense>} />
+        <Route path="/admin/alerts" element={<AdminSuspense><AdminAlerts /></AdminSuspense>} />
+        <Route path="/admin/printful" element={<AdminSuspense><AdminPrintful /></AdminSuspense>} />
+        <Route path="/admin/stripe" element={<AdminSuspense><AdminStripe /></AdminSuspense>} />
         <Route path="/admin/customers" element={<AdminSuspense><AdminPlaceholder title="Customers" desc="Customer management with order history and profiles." /></AdminSuspense>} />
         <Route path="/admin/discounts" element={<AdminSuspense><AdminPlaceholder title="Discounts" desc="Create and manage discount codes and promotions." /></AdminSuspense>} />
         <Route path="/admin/releases" element={<AdminSuspense><AdminReleases /></AdminSuspense>} />
